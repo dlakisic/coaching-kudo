@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClientComponentClient } from '@/lib/supabase'
+import { ThemeToggle } from './ui/ThemeToggle'
 
 interface NavigationProps {
   userRole: 'coach' | 'athlete'
@@ -12,8 +13,16 @@ interface NavigationProps {
 
 export default function Navigation({ userRole, userName }: NavigationProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClientComponentClient()
+
+  // Fermer les menus quand on navigue
+  useEffect(() => {
+    setIsOpen(false)
+    setIsProfileOpen(false)
+  }, [pathname])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -36,95 +45,179 @@ export default function Navigation({ userRole, userName }: NavigationProps) {
 
   const navItems = userRole === 'coach' ? coachNavItems : athleteNavItems
 
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
   return (
-    <nav className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link href="/dashboard" className="flex-shrink-0 flex items-center">
-              <span className="text-xl font-bold text-blue-600">Coaching Kudo</span>
-            </Link>
-            
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+    <>
+      {/* Navigation Desktop & Mobile */}
+      <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-40 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center">
+              <Link href="/dashboard" className="flex items-center space-x-3 group">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform duration-200">
+                  <span className="text-white font-bold text-sm">🥋</span>
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                  Coaching Kudo
+                </span>
+              </Link>
+            </div>
+
+            {/* Navigation Desktop */}
+            <div className="hidden md:flex md:items-center md:space-x-1">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors"
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    isActive(item.href)
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800'
+                  }`}
                 >
                   {item.label}
                 </Link>
               ))}
             </div>
-          </div>
 
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            <div className="relative">
+            {/* Profil utilisateur Desktop */}
+            <div className="hidden md:flex md:items-center md:space-x-4">
+              <ThemeToggle />
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">
+                      {userName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="hidden lg:block text-left">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{userName}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{userRole}</div>
+                  </div>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none z-50 border border-gray-100 dark:border-gray-700">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{userName}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 capitalize flex items-center mt-1">
+                        <span className={`w-2 h-2 rounded-full mr-2 ${userRole === 'coach' ? 'bg-blue-500' : 'bg-green-500'}`}></span>
+                        {userRole}
+                      </div>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Se déconnecter
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Menu Mobile Button */}
+            <div className="md:hidden flex items-center space-x-2">
+              <ThemeToggle />
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="bg-white flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors duration-200"
               >
-                <span className="sr-only">Ouvrir menu utilisateur</span>
-                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span className="text-white font-medium text-sm">
-                    {userName.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                <span className="sr-only">Ouvrir menu</span>
+                <svg className={`h-6 w-6 transform transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {isOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
               </button>
+            </div>
+          </div>
+        </div>
 
-              {isOpen && (
-                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                  <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                    {userName}
-                    <br />
-                    <span className="text-xs text-gray-500 capitalize">{userRole}</span>
+        {/* Menu Mobile Overlay */}
+        {isOpen && (
+          <div className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
+            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl w-full max-w-sm h-full shadow-2xl transform transition-transform duration-300">
+              <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+                      <span className="text-white font-bold">🥋</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{userName}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">{userRole}</div>
+                    </div>
                   </div>
                   <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsOpen(false)}
+                    className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
                   >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-2 py-4 space-y-2">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                      isActive(item.href)
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                
+                <div className="pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
+                  <button
+                    onClick={() => {
+                      setIsOpen(false)
+                      handleLogout()
+                    }}
+                    className="flex items-center w-full px-4 py-3 rounded-xl font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
+                  >
+                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                     Se déconnecter
                   </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
+        )}
+      </nav>
 
-          <div className="sm:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-            >
-              <span className="sr-only">Ouvrir menu</span>
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="sm:hidden">
-          <div className="pt-2 pb-3 space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <button
-              onClick={handleLogout}
-              className="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium"
-            >
-              Se déconnecter
-            </button>
-          </div>
-        </div>
+      {/* Click outside to close profile dropdown */}
+      {isProfileOpen && (
+        <div 
+          className="fixed inset-0 z-30" 
+          onClick={() => setIsProfileOpen(false)}
+        />
       )}
-    </nav>
+    </>
   )
 }
