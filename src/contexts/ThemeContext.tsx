@@ -18,10 +18,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Charger le thème depuis localStorage au montage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('coaching-kudo-theme') as Theme
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    
-    setThemeState(savedTheme || systemTheme)
+    try {
+      const savedTheme = localStorage.getItem('coaching-kudo-theme') as Theme
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      
+      setThemeState(savedTheme || systemTheme)
+    } catch (error) {
+      console.warn('Failed to load theme from localStorage:', error)
+    }
     setMounted(true)
   }, [])
 
@@ -37,7 +41,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove('dark')
     }
 
-    localStorage.setItem('coaching-kudo-theme', theme)
+    try {
+      localStorage.setItem('coaching-kudo-theme', theme)
+    } catch (error) {
+      console.warn('Failed to save theme to localStorage:', error)
+    }
   }, [theme, mounted])
 
   const toggleTheme = () => {
@@ -46,11 +54,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme)
-  }
-
-  // Éviter le flash pendant l'hydratation
-  if (!mounted) {
-    return <div className="opacity-0">{children}</div>
   }
 
   return (
