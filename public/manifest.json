@@ -1,0 +1,102 @@
+{
+  "name": "Coaching Kudo - Gestion d'Entraînement",
+  "short_name": "Coaching Kudo",
+  "description": "Application de gestion d'entraînement pour clubs de Kudo - Suivi des athlètes, notes et recommandations",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["sports", "productivity", "education"],
+  "lang": "fr",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mes athlètes",
+      "short_name": "Athlètes",
+      "description": "Accéder à la liste des athlètes",
+      "url": "/athletes",
+      "icons": [{ "src": "/icons/athletes-shortcut.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Calendrier",
+      "short_name": "Calendrier",
+      "description": "Voir le calendrier d'entraînement",
+      "url": "/calendar",
+      "icons": [{ "src": "/icons/calendar-shortcut.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Nouvelle note",
+      "short_name": "Note",
+      "description": "Créer une nouvelle note d'entraînement",
+      "url": "/notes/new",
+      "icons": [{ "src": "/icons/note-shortcut.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tableau de bord principal"
+    },
+    {
+      "src": "/screenshots/dashboard-narrow.png",
+      "sizes": "375x812",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tableau de bord mobile"
+    }
+  ]
+}
