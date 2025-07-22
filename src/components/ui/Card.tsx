@@ -1,4 +1,7 @@
+'use client'
+
 import React from 'react'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface CardProps {
   children: React.ReactNode
@@ -17,13 +20,27 @@ export function Card({
   onClick,
   hover = false
 }: CardProps) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  
   const baseClasses = 'rounded-xl transition-all duration-200'
   
-  const variantClasses = {
-    default: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm',
-    elevated: 'bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700',
-    outlined: 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600',
-    gradient: 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800'
+  const getVariantClasses = () => {
+    const variants = {
+      default: isDark 
+        ? 'bg-gray-800 border border-gray-700 shadow-sm' 
+        : 'bg-white border border-gray-200 shadow-sm',
+      elevated: isDark 
+        ? 'bg-gray-800 shadow-lg border border-gray-700' 
+        : 'bg-white shadow-lg border border-gray-100',
+      outlined: isDark 
+        ? 'bg-gray-800 border-2 border-gray-600' 
+        : 'bg-white border-2 border-gray-200',
+      gradient: isDark 
+        ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border border-blue-800' 
+        : 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100'
+    }
+    return variants[variant]
   }
 
   const paddingClasses = {
@@ -40,7 +57,7 @@ export function Card({
     <div
       className={`
         ${baseClasses}
-        ${variantClasses[variant]}
+        ${getVariantClasses()}
         ${paddingClasses[padding]}
         ${hoverClasses}
         ${clickableClasses}
@@ -59,8 +76,11 @@ interface CardHeaderProps {
 }
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  
   return (
-    <div className={`border-b border-gray-100 dark:border-gray-700 pb-4 mb-4 ${className}`}>
+    <div className={`border-b pb-4 mb-4 ${isDark ? 'border-gray-700' : 'border-gray-100'} ${className}`}>
       {children}
     </div>
   )
@@ -72,8 +92,11 @@ interface CardTitleProps {
 }
 
 export function CardTitle({ children, className = '' }: CardTitleProps) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  
   return (
-    <h3 className={`text-lg font-semibold text-gray-900 dark:text-gray-100 ${className}`}>
+    <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'} ${className}`}>
       {children}
     </h3>
   )
@@ -98,8 +121,11 @@ interface CardFooterProps {
 }
 
 export function CardFooter({ children, className = '' }: CardFooterProps) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  
   return (
-    <div className={`border-t border-gray-100 dark:border-gray-700 pt-4 mt-4 ${className}`}>
+    <div className={`border-t pt-4 mt-4 ${isDark ? 'border-gray-700' : 'border-gray-100'} ${className}`}>
       {children}
     </div>
   )

@@ -1,4 +1,7 @@
+'use client'
+
 import React from 'react'
+import { useTheme } from '@/contexts/ThemeContext'
 
 interface BadgeProps {
   children: React.ReactNode
@@ -15,15 +18,31 @@ export function Badge({
   className = '',
   icon
 }: BadgeProps) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  
   const baseClasses = 'inline-flex items-center font-medium rounded-full'
 
-  const variantClasses = {
-    success: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-700',
-    warning: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-700',
-    danger: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-700',
-    info: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700',
-    neutral: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-600',
-    gradient: 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+  const getVariantClasses = () => {
+    const variants = {
+      success: isDark 
+        ? 'bg-green-900/30 text-green-300 border border-green-700' 
+        : 'bg-green-100 text-green-800 border border-green-200',
+      warning: isDark 
+        ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-700' 
+        : 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+      danger: isDark 
+        ? 'bg-red-900/30 text-red-300 border border-red-700' 
+        : 'bg-red-100 text-red-800 border border-red-200',
+      info: isDark 
+        ? 'bg-blue-900/30 text-blue-300 border border-blue-700' 
+        : 'bg-blue-100 text-blue-800 border border-blue-200',
+      neutral: isDark 
+        ? 'bg-gray-800 text-gray-300 border border-gray-600' 
+        : 'bg-gray-100 text-gray-800 border border-gray-200',
+      gradient: 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md'
+    }
+    return variants[variant]
   }
 
   const sizeClasses = {
@@ -35,7 +54,7 @@ export function Badge({
   return (
     <span className={`
       ${baseClasses}
-      ${variantClasses[variant]}
+      ${getVariantClasses()}
       ${sizeClasses[size]}
       ${className}
     `}>

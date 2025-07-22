@@ -1,1 +1,291 @@
 @import "tailwindcss";
+
+/* Dark mode fixes - Tailwind CSS 4 compatibility */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body,
+.dark .bg-gray-50 {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+.dark .bg-white {
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+.dark .text-gray-900 {
+  color: #f9fafb;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db;
+}
+
+.dark .text-gray-500 {
+  color: #9ca3af;
+}
+
+.dark .text-gray-400 {
+  color: #9ca3af;
+}
+
+.dark .text-gray-300 {
+  color: #d1d5db;
+}
+
+.dark .text-gray-100 {
+  color: #f9fafb;
+}
+
+.dark .border-gray-200 {
+  border-color: #374151;
+}
+
+.dark .border-gray-700 {
+  border-color: #374151;
+}
+
+.dark .bg-gray-100 {
+  background-color: #374151;
+}
+
+.dark .bg-gray-700 {
+  background-color: #374151;
+}
+
+.dark .bg-gray-800 {
+  background-color: #1f2937;
+}
+
+.dark .bg-gray-900 {
+  background-color: #111827;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #374151;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #374151;
+}
+
+.dark .hover\:bg-gray-700:hover {
+  background-color: #4b5563;
+}
+
+.dark .hover\:bg-gray-800:hover {
+  background-color: #374151;
+}
+
+/* Calendar specific dark mode styles */
+.dark .bg-blue-50 {
+  background-color: rgba(30, 58, 138, 0.2);
+}
+
+.dark .border-blue-200 {
+  border-color: #1d4ed8;
+}
+
+.dark .border-blue-800 {
+  border-color: #1d4ed8;
+}
+
+.dark .text-blue-900 {
+  color: #dbeafe;
+}
+
+.dark .text-blue-100 {
+  color: #dbeafe;
+}
+
+.dark .text-blue-800 {
+  color: #93c5fd;
+}
+
+.dark .text-blue-200 {
+  color: #93c5fd;
+}
+
+.dark .text-blue-600 {
+  color: #60a5fa;
+}
+
+.dark .text-blue-300 {
+  color: #60a5fa;
+}
+
+.dark .text-blue-400 {
+  color: #60a5fa;
+}
+
+.dark .text-blue-700 {
+  color: #93c5fd;
+}
+
+.dark .bg-blue-100 {
+  background-color: #1e3a8a;
+}
+
+.dark .bg-blue-900 {
+  background-color: #1e3a8a;
+}
+
+.dark .hover\:text-blue-100:hover {
+  color: #dbeafe;
+}
+
+.dark .hover\:text-blue-900:hover {
+  color: #dbeafe;
+}
+
+.dark .hover\:text-gray-100:hover {
+  color: #f9fafb;
+}
+
+.dark .hover\:text-gray-900:hover {
+  color: #f9fafb;
+}
+
+/* Additional missing styles */
+.dark .text-gray-500 {
+  color: #9ca3af;
+}
+
+.dark .text-gray-400 {
+  color: #6b7280;
+}
+
+.dark .bg-blue-100 {
+  background-color: #1e3a8a;
+}
+
+.dark .text-blue-700 {
+  color: #93c5fd;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #374151;
+}
+
+.dark .ring-blue-500 {
+  --tw-ring-color: #3b82f6;
+}
+
+.dark .ring-blue-400 {
+  --tw-ring-color: #60a5fa;
+}
+
+.dark .text-red-600 {
+  color: #ef4444;
+}
+
+.dark .text-red-700 {
+  color: #dc2626;
+}
+
+.dark .text-red-400 {
+  color: #f87171;
+}
+
+.dark .bg-red-50 {
+  background-color: #7f1d1d30;
+}
+
+.dark .bg-red-100 {
+  background-color: #7f1d1d30;
+}
+
+.dark .hover\:bg-red-50:hover {
+  background-color: #7f1d1d50;
+}
+
+.dark .hover\:bg-red-900\/20:hover {
+  background-color: #7f1d1d33;
+}
+
+/* Fix calendar page background */
+.dark .min-h-screen.bg-gray-50 {
+  background-color: #111827 !important;
+}
+
+/* Fix main calendar page wrapper */
+.dark div.p-6.space-y-6 {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+}
+
+/* Modal dark mode */
+.dark .bg-white.text-left.shadow-xl {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #374151 !important;
+}
+
+/* Navigation styles are now handled directly in the component */
+
+/* Additional calendar components */
+.dark .bg-white {
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .border {
+  border-color: #374151;
+}
+
+.dark .divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-color: #374151;
+}
+
+/* Toggle buttons specific styles */
+.dark .bg-white.text-blue-600.shadow-sm {
+  background-color: #1f2937 !important;
+  color: #60a5fa !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #374151;
+}
+
+.dark .text-gray-600 {
+  color: #d1d5db;
+}
+
+.dark .hover\:text-gray-900:hover {
+  color: #f9fafb;
+}
+
+/* Additional missing styles */
+.dark .text-gray-500 {
+  color: #9ca3af;
+}
+
+.dark .text-gray-400 {
+  color: #6b7280;
+}
+
+.dark .bg-blue-100 {
+  background-color: #1e3a8a;
+}
+
+.dark .text-blue-700 {
+  color: #93c5fd;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #374151;
+}
+
+.dark .ring-blue-500 {
+  --tw-ring-color: #3b82f6;
+}

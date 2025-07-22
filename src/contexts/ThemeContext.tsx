@@ -22,7 +22,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const savedTheme = localStorage.getItem('coaching-kudo-theme') as Theme
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       
-      setThemeState(savedTheme || systemTheme)
+      const initialTheme = savedTheme || systemTheme
+      setThemeState(initialTheme)
+      
+      // Appliquer immédiatement le thème au DOM
+      const root = document.documentElement
+      if (initialTheme === 'dark') {
+        root.classList.add('dark')
+      } else {
+        root.classList.remove('dark')
+      }
     } catch (error) {
       console.warn('Failed to load theme from localStorage:', error)
     }
@@ -49,7 +58,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, mounted])
 
   const toggleTheme = () => {
-    setThemeState(theme === 'light' ? 'dark' : 'light')
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    console.log('Toggling theme from', theme, 'to', newTheme) // Debug
+    
+    setThemeState(newTheme)
+    
+    // Force la mise à jour immédiate du DOM
+    const root = document.documentElement
+    if (newTheme === 'dark') {
+      root.classList.add('dark')
+      console.log('Added dark class') // Debug
+    } else {
+      root.classList.remove('dark')
+      console.log('Removed dark class') // Debug
+    }
+    
+    // Sauvegarder immédiatement
+    try {
+      localStorage.setItem('coaching-kudo-theme', newTheme)
+      console.log('Saved theme to localStorage:', newTheme) // Debug
+    } catch (error) {
+      console.warn('Failed to save theme to localStorage:', error)
+    }
   }
 
   const setTheme = (newTheme: Theme) => {
@@ -80,6 +110,8 @@ export const ThemeScript = () => {
       
       if (theme === 'dark') {
         document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
       }
     })()
   `
