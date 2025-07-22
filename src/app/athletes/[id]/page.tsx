@@ -1,46 +1,103 @@
-import { requireRole } from '@/lib/auth'
-import { createServerComponentClient } from '@/lib/supabase-server'
+import { requireAuth, getUserProfile } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui'
+import { Badge } from '@/components/ui'
 import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import RecommendationsSection from './RecommendationsSection'
+import NotesSection from './NotesSection'
 
 interface AthleteProfileProps {
   params: { id: string }
 }
 
 export default async function AthleteProfile({ params }: AthleteProfileProps) {
-  const profile = await requireRole('coach')
-  const supabase = await createServerComponentClient()
+  const user = await requireAuth()
+  const profile = await getUserProfile()
+  
+  if (!profile) {
+    return <div>Profil introuvable</div>
+  }
 
   // Récupérer l'athlète
-  const { data: athlete } = await supabase
+  const { data: athlete, error: athleteError } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('id', params.id)
     .eq('role', 'athlete')
     .single()
 
-  if (!athlete) {
+  if (athleteError || !athlete) {
     notFound()
   }
 
-  // Récupérer les notes récentes de cet athlète
-  const { data: recentNotes } = await supabase
+  // Récupérer les notes pour cet athlète (avec permissions hiérarchiques)
+  let notesQuery = supabaseAdmin
     .from('notes')
-    .select('*')
+    .select(`
+      *,
+      coach:profiles!notes_coach_id_fkey(name)
+    `)
     .eq('athlete_id', params.id)
-    .eq('coach_id', profile.id)
     .order('date', { ascending: false })
-    .limit(5)
 
-  // Récupérer les recommandations actives
-  const { data: recommendations } = await supabase
+  // Filtrer selon les permissions
+  if (profile.coach_level === 'super_admin') {
+    // Super admin voit toutes les notes
+  } else if (profile.coach_level === 'principal') {
+    // Coach principal voit toutes les notes
+  } else if (profile.coach_level === 'junior') {
+    // Coach junior voit ses propres notes + celles de ses superviseurs
+    const supervisorIds = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .in('coach_level', ['super_admin', 'principal'])
+      .then(({ data }) => data?.map(p => p.id) || [])
+    
+    notesQuery = notesQuery.in('coach_id', [...supervisorIds, user.id])
+  } else if (profile.role === 'athlete') {
+    // Athlète ne voit que ses propres notes
+    if (params.id !== user.id) {
+      notFound()
+    }
+  }
+
+  const { data: allNotes } = await notesQuery
+
+  // Récupérer les recommandations pour cet athlète (avec permissions hiérarchiques)
+  let recsQuery = supabaseAdmin
     .from('recommendations')
-    .select('*')
+    .select(`
+      *,
+      coach:profiles!recommendations_coach_id_fkey(name)
+    `)
     .eq('athlete_id', params.id)
-    .eq('coach_id', profile.id)
     .order('created_at', { ascending: false })
     .limit(10)
+
+  // Même filtrage pour les recommandations
+  if (profile.coach_level === 'super_admin') {
+    // Super admin voit toutes les recommandations
+  } else if (profile.coach_level === 'principal') {
+    // Coach principal voit toutes les recommandations
+  } else if (profile.coach_level === 'junior') {
+    // Coach junior voit ses propres recommandations + celles de ses superviseurs
+    const supervisorIds = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .in('coach_level', ['super_admin', 'principal'])
+      .then(({ data }) => data?.map(p => p.id) || [])
+    
+    recsQuery = recsQuery.in('coach_id', [...supervisorIds, user.id])
+  } else if (profile.role === 'athlete') {
+    // Athlète ne voit que ses propres recommandations
+    if (params.id !== user.id) {
+      notFound()
+    }
+  }
+
+  const { data: recommendations } = await recsQuery
 
   const unreadRecommendations = recommendations?.filter(r => !r.read_status) || []
 
@@ -65,11 +122,19 @@ export default async function AthleteProfile({ params }: AthleteProfileProps) {
                 {athlete.active ? 'Actif' : 'En attente'}
               </span>
               <Link
-                href={`/athletes/${params.id}/edit`}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                href={`/athletes/${params.id}/history`}
+                className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
               >
-                Modifier
+                📊 Historique
               </Link>
+              {profile.role === 'coach' && (
+                <Link
+                  href={`/athletes/${params.id}/edit`}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                >
+                  ✏️ Modifier
+                </Link>
+              )}
             </div>
           </div>
 
@@ -93,124 +158,27 @@ export default async function AthleteProfile({ params }: AthleteProfileProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Actions rapides */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions rapides</h2>
-            <div className="space-y-3">
-              <Link
-                href={`/notes/new?athleteId=${params.id}`}
-                className="w-full bg-blue-600 text-white px-4 py-3 rounded-md font-medium hover:bg-blue-700 flex items-center justify-center"
-              >
-                📝 Ajouter une note
-              </Link>
-              <Link
-                href={`/recommendations/new?athleteId=${params.id}`}
-                className="w-full bg-green-600 text-white px-4 py-3 rounded-md font-medium hover:bg-green-700 flex items-center justify-center"
-              >
-                💡 Créer une recommandation
-              </Link>
-              <Link
-                href={`/athletes/${params.id}/history`}
-                className="w-full bg-gray-600 text-white px-4 py-3 rounded-md font-medium hover:bg-gray-700 flex items-center justify-center"
-              >
-                📊 Voir l'historique complet
-              </Link>
-            </div>
-          </div>
-
-          {/* Recommandations non lues */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Recommandations</h2>
-              {unreadRecommendations.length > 0 && (
-                <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                  {unreadRecommendations.length} non lues
-                </span>
-              )}
-            </div>
-            {recommendations && recommendations.length > 0 ? (
-              <div className="space-y-3">
-                {recommendations.slice(0, 3).map((recommendation) => (
-                  <div key={recommendation.id} className={`p-3 rounded-md border ${
-                    !recommendation.read_status ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                  }`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-sm font-medium text-gray-900">{recommendation.title}</h3>
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          recommendation.priority === 'haute' ? 'bg-red-100 text-red-800' :
-                          recommendation.priority === 'moyenne' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {recommendation.priority}
-                        </span>
-                        {!recommendation.read_status && (
-                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">{recommendation.description}</p>
-                  </div>
-                ))}
-                {recommendations.length > 3 && (
-                  <Link
-                    href={`/recommendations?athleteId=${params.id}`}
-                    className="text-blue-600 text-sm hover:text-blue-800"
-                  >
-                    Voir toutes les recommandations ({recommendations.length})
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm">Aucune recommandation pour cet athlète</p>
-            )}
-          </div>
+        {/* Recommandations avec bouton intégré */}
+        <div className="mb-8">
+          <RecommendationsSection
+            recommendations={recommendations || []}
+            unreadCount={unreadRecommendations.length}
+            athleteId={params.id}
+            athleteName={athlete.name}
+            coachId={user.id}
+            isCoach={profile.role === 'coach'}
+          />
         </div>
 
-        {/* Notes récentes */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Notes récentes</h2>
-            <Link
-              href={`/notes?athleteId=${params.id}`}
-              className="text-blue-600 text-sm hover:text-blue-800"
-            >
-              Voir toutes les notes
-            </Link>
-          </div>
-          {recentNotes && recentNotes.length > 0 ? (
-            <div className="space-y-4">
-              {recentNotes.map((note) => (
-                <div key={note.id} className="border-l-4 border-blue-500 pl-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        note.category === 'technique' ? 'bg-blue-100 text-blue-800' :
-                        note.category === 'mental' ? 'bg-purple-100 text-purple-800' :
-                        note.category === 'physique' ? 'bg-green-100 text-green-800' :
-                        'bg-orange-100 text-orange-800'
-                      }`}>
-                        {note.category}
-                      </span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        note.context === 'competition' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {note.context}
-                      </span>
-                    </div>
-                    <time className="text-xs text-gray-500">
-                      {new Date(note.date).toLocaleDateString('fr-FR')}
-                    </time>
-                  </div>
-                  <p className="text-sm text-gray-900">{note.content}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm">Aucune note pour cet athlète</p>
-          )}
+        {/* Toutes les notes avec bouton intégré */}
+        <div>
+          <NotesSection
+            notes={allNotes || []}
+            athleteId={params.id}
+            athleteName={athlete.name}
+            coachId={user.id}
+            isCoach={profile.role === 'coach'}
+          />
         </div>
       </div>
     </div>

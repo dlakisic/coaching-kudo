@@ -1,4 +1,5 @@
 import { requireAuth, getUserProfile } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { redirect } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 
@@ -8,6 +9,84 @@ export default async function Dashboard() {
 
   if (!profile) {
     redirect('/setup-profile')
+  }
+
+  // Récupérer les vraies données selon les permissions
+  let athletesCount = 0
+  let notesCount = 0
+  let recommendationsCount = 0
+
+  if (profile.role === 'coach') {
+    // Compter les athlètes visibles
+    let athletesQuery = supabaseAdmin
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'athlete')
+      .eq('active', true)
+
+    const { count } = await athletesQuery
+    athletesCount = count || 0
+
+    // Compter les notes selon les permissions
+    let notesQuery = supabaseAdmin
+      .from('notes')
+      .select('id', { count: 'exact', head: true })
+
+    if (profile.coach_level === 'super_admin') {
+      // Super admin voit toutes les notes
+    } else if (profile.coach_level === 'principal') {
+      // Coach principal voit toutes les notes
+    } else if (profile.coach_level === 'junior') {
+      // Coach junior voit ses propres notes + celles de ses superviseurs
+      const supervisorIds = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .in('coach_level', ['super_admin', 'principal'])
+        .then(({ data }) => data?.map(p => p.id) || [])
+      
+      notesQuery = notesQuery.in('coach_id', [...supervisorIds, user.id])
+    }
+
+    const { count: notesCountResult } = await notesQuery
+    notesCount = notesCountResult || 0
+
+    // Compter les recommandations selon les permissions
+    let recsQuery = supabaseAdmin
+      .from('recommendations')
+      .select('id', { count: 'exact', head: true })
+
+    if (profile.coach_level === 'super_admin') {
+      // Super admin voit toutes les recommandations
+    } else if (profile.coach_level === 'principal') {
+      // Coach principal voit toutes les recommandations
+    } else if (profile.coach_level === 'junior') {
+      // Coach junior voit ses propres recommandations + celles de ses superviseurs
+      const supervisorIds = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .in('coach_level', ['super_admin', 'principal'])
+        .then(({ data }) => data?.map(p => p.id) || [])
+      
+      recsQuery = recsQuery.in('coach_id', [...supervisorIds, user.id])
+    }
+
+    const { count: recsCountResult } = await recsQuery
+    recommendationsCount = recsCountResult || 0
+  } else {
+    // Pour les athlètes : compter leurs propres données
+    const { count: notesCountResult } = await supabaseAdmin
+      .from('notes')
+      .select('id', { count: 'exact', head: true })
+      .eq('athlete_id', user.id)
+    
+    notesCount = notesCountResult || 0
+
+    const { count: recsCountResult } = await supabaseAdmin
+      .from('recommendations')
+      .select('id', { count: 'exact', head: true })
+      .eq('athlete_id', user.id)
+    
+    recommendationsCount = recsCountResult || 0
   }
 
   return (
@@ -39,7 +118,7 @@ export default async function Dashboard() {
                         Mes athlètes
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        0
+                        {athletesCount}
                       </dd>
                     </dl>
                   </div>
@@ -61,7 +140,7 @@ export default async function Dashboard() {
                         Notes récentes
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        0
+                        {notesCount}
                       </dd>
                     </dl>
                   </div>
@@ -83,7 +162,7 @@ export default async function Dashboard() {
                         Recommandations
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        0
+                        {recommendationsCount}
                       </dd>
                     </dl>
                   </div>

@@ -1,25 +1,51 @@
-import { requireRole } from '@/lib/auth'
-import { createServerComponentClient } from '@/lib/supabase-server'
+import { requireAuth, getUserProfile } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import Navigation from '@/components/Navigation'
 import Link from 'next/link'
 
-export default async function Notes({ searchParams }: { searchParams: { athleteId?: string } }) {
-  const profile = await requireRole('coach')
-  const supabase = await createServerComponentClient()
+export default async function Notes({ searchParams }: { searchParams: Promise<{ athleteId?: string }> }) {
+  const params = await searchParams
+  const user = await requireAuth()
+  const profile = await getUserProfile()
+  
+  if (!profile) {
+    return <div>Profil introuvable</div>
+  }
 
-  // Récupérer les notes avec les informations des athlètes
-  let notesQuery = supabase
+  // Récupérer les notes selon les permissions hiérarchiques
+  let notesQuery = supabaseAdmin
     .from('notes')
     .select(`
       *,
-      athlete:profiles!athlete_id (
+      athlete:profiles!notes_athlete_id_fkey (
         id,
         name,
         category
+      ),
+      coach:profiles!notes_coach_id_fkey (
+        name
       )
     `)
-    .eq('coach_id', profile.id)
     .order('date', { ascending: false })
+
+  // Filtrer selon les permissions
+  if (profile.coach_level === 'super_admin') {
+    // Super admin voit toutes les notes
+  } else if (profile.coach_level === 'principal') {
+    // Coach principal voit toutes les notes 
+  } else if (profile.coach_level === 'junior') {
+    // Coach junior voit ses propres notes + celles de ses superviseurs
+    const supervisorIds = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .in('coach_level', ['super_admin', 'principal'])
+      .then(({ data }) => data?.map(p => p.id) || [])
+    
+    notesQuery = notesQuery.in('coach_id', [...supervisorIds, user.id])
+  } else {
+    // Athlète voit ses propres notes
+    notesQuery = notesQuery.eq('athlete_id', user.id)
+  }
 
   // Filtrer par athlète si spécifié
   if (searchParams.athleteId) {
@@ -28,16 +54,16 @@ export default async function Notes({ searchParams }: { searchParams: { athleteI
 
   const { data: notes } = await notesQuery
 
-  // Récupérer la liste des athlètes pour le filtre
-  const { data: athletes } = await supabase
+  // Récupérer la liste des athlètes visibles pour le filtre
+  const { data: athletes } = await supabaseAdmin
     .from('profiles')
     .select('id, name, category')
     .eq('role', 'athlete')
     .eq('active', true)
     .order('name')
 
-  const selectedAthlete = searchParams.athleteId 
-    ? athletes?.find(a => a.id === searchParams.athleteId)
+  const selectedAthlete = params.athleteId 
+    ? athletes?.find(a => a.id === params.athleteId)
     : null
 
   return (
@@ -68,7 +94,7 @@ export default async function Notes({ searchParams }: { searchParams: { athleteI
               </Link>
             )}
             <Link
-              href={`/notes/new${searchParams.athleteId ? `?athleteId=${searchParams.athleteId}` : ''}`}
+              href={`/notes/new${params.athleteId ? `?athleteId=${params.athleteId}` : ''}`}
               className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
             >
               Nouvelle note
@@ -109,6 +135,11 @@ export default async function Notes({ searchParams }: { searchParams: { athleteI
                       >
                         {note.athlete.name}
                       </Link>
+                    )}
+                    {note.coach && (
+                      <span className="text-sm text-gray-500">
+                        par {note.coach.name}
+                      </span>
                     )}
                     <div className="flex items-center space-x-2">
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -169,7 +200,7 @@ export default async function Notes({ searchParams }: { searchParams: { athleteI
             </p>
             <div className="mt-6">
               <Link
-                href={`/notes/new${searchParams.athleteId ? `?athleteId=${searchParams.athleteId}` : ''}`}
+                href={`/notes/new${params.athleteId ? `?athleteId=${params.athleteId}` : ''}`}
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
               >
                 Nouvelle note

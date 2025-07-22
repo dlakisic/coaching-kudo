@@ -5,6 +5,44 @@ import { createClientComponentClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function SetupProfile() {
+  const router = useRouter()
+  const supabase = createClientComponentClient()
+  
+  useEffect(() => {
+    // Vérifier si l'utilisateur a déjà un profil actif
+    const checkProfile = async () => {
+      console.log('SetupProfile: Checking for existing profile...')
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        console.log('SetupProfile: No user found, redirecting to login')
+        router.push('/login')
+        return
+      }
+      
+      console.log('SetupProfile: User found:', user.email)
+      
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      
+      console.log('SetupProfile: Profile check result:', { profile, error })
+      
+      if (profile && profile.active) {
+        console.log('SetupProfile: Active profile found, redirecting to dashboard')
+        router.push('/dashboard')
+        return
+      }
+      
+      if (profile && !profile.active) {
+        console.log('SetupProfile: Inactive profile found, staying on setup')
+      }
+    }
+    
+    checkProfile()
+  }, [router, supabase])
   const [name, setName] = useState('')
   const [role, setRole] = useState<'coach' | 'athlete'>('athlete')
   const [category, setCategory] = useState('')
@@ -13,9 +51,6 @@ export default function SetupProfile() {
   const [height, setHeight] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  
-  const router = useRouter()
-  const supabase = createClientComponentClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -27,7 +27,7 @@ export default function Login() {
           password,
           options: {
             data: {
-              role: 'athlete' // Par défaut, le coach validera
+              role: 'athlete'
             }
           }
         })

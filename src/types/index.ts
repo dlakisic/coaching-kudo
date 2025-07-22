@@ -6,7 +6,7 @@ export interface Profile {
   category?: string
   grade?: string
   weight?: number
-  height?: number // Ajout de la taille
+  height?: number
   active: boolean
   photo?: string
   created_at: string
