@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Générateur d'icônes PWA</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512" style="display: none;"></canvas>
+    <div id="output"></div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function generateIcon(size) {
+            // Redimensionner le canvas
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Gradient de fond bleu
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#1d4ed8');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Ajouter un cercle blanc légèrement transparent
+            ctx.globalAlpha = 0.1;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2 - 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.globalAlpha = 1;
+            
+            // Ajouter l'emoji karaté
+            const fontSize = Math.floor(size * 0.6);
+            ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.fillText('🥋', size/2, size/2);
+            
+            // Convertir en image et créer le lien de téléchargement
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `icon-${size}x${size}.png`;
+                link.href = url;
+                link.textContent = `Télécharger icon-${size}x${size}.png`;
+                link.style.display = 'block';
+                link.style.margin = '5px 0';
+                document.getElementById('output').appendChild(link);
+            });
+        }
+        
+        // Générer toutes les tailles
+        sizes.forEach(size => generateIcon(size));
+        
+        // Instructions
+        const instructions = document.createElement('div');
+        instructions.innerHTML = `
+            <h3>Instructions :</h3>
+            <p>1. Téléchargez toutes les icônes ci-dessus</p>
+            <p>2. Placez-les dans le dossier <code>public/icons/</code></p>
+            <p>3. Votre PWA aura des icônes personnalisées !</p>
+        `;
+        instructions.style.marginTop = '20px';
+        instructions.style.padding = '20px';
+        instructions.style.border = '1px solid #ccc';
+        instructions.style.borderRadius = '5px';
+        document.body.insertBefore(instructions, document.getElementById('output'));
+    </script>
+</body>
+</html>
