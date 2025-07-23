@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { EVENT_COLORS, type EventType } from '@/constants'
+import CalendarExportModal from './CalendarExportModal'
+import EventShareModal from './EventShareModal'
 
 interface CalendarEvent {
   id: string
@@ -36,6 +38,9 @@ interface CalendarViewProps {
 export default function CalendarView({ events, onEventClick, onDateClick }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<'month' | 'week'>('month')
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
 
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
@@ -53,6 +58,17 @@ export default function CalendarView({ events, onEventClick, onDateClick }: Cale
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1))
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1))
+
+  const handleEventClick = (event: CalendarEvent) => {
+    if (onEventClick) {
+      onEventClick(event)
+    }
+  }
+
+  const handleShareEvent = (eventId: string) => {
+    setSelectedEventId(eventId)
+    setShareModalOpen(true)
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -80,25 +96,35 @@ export default function CalendarView({ events, onEventClick, onDateClick }: Cale
         
         <div className="flex gap-2">
           <button
-            onClick={() => setView('month')}
-            className={`px-3 py-1 text-sm rounded-lg ${
-              view === 'month' 
-                ? 'bg-blue-100 text-blue-700' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
+            onClick={() => setExportModalOpen(true)}
+            className="px-3 py-1 text-sm rounded-lg text-gray-600 hover:bg-gray-100 flex items-center gap-1"
+            title="Exporter le calendrier"
           >
-            Mois
+            📤 Export
           </button>
-          <button
-            onClick={() => setView('week')}
-            className={`px-3 py-1 text-sm rounded-lg ${
-              view === 'week' 
-                ? 'bg-blue-100 text-blue-700' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Semaine
-          </button>
+          
+          <div className="flex gap-2 ml-2">
+            <button
+              onClick={() => setView('month')}
+              className={`px-3 py-1 text-sm rounded-lg ${
+                view === 'month' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Mois
+            </button>
+            <button
+              onClick={() => setView('week')}
+              className={`px-3 py-1 text-sm rounded-lg ${
+                view === 'week' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Semaine
+            </button>
+          </div>
         </div>
       </div>
 
@@ -139,22 +165,39 @@ export default function CalendarView({ events, onEventClick, onDateClick }: Cale
                   {dayEvents.slice(0, 3).map((event) => (
                     <div
                       key={event.id}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onEventClick?.(event)
-                      }}
-                      className="px-2 py-1 text-xs rounded truncate cursor-pointer hover:opacity-80"
+                      className="group relative px-2 py-1 text-xs rounded truncate cursor-pointer hover:opacity-80"
                       style={{
                         backgroundColor: event.color || EVENT_COLORS[event.event_type] || EVENT_COLORS.other,
                         color: 'white'
                       }}
                       title={`${event.title} - ${event.organizer.name}`}
                     >
-                      {event.all_day ? (
-                        event.title
-                      ) : (
-                        `${format(new Date(event.start_datetime), 'HH:mm')} ${event.title}`
-                      )}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEventClick(event)
+                        }}
+                        className="flex-1"
+                      >
+                        {event.all_day ? (
+                          event.title
+                        ) : (
+                          `${format(new Date(event.start_datetime), 'HH:mm')} ${event.title}`
+                        )}
+                      </div>
+                      
+                      {/* Bouton de partage (visible au hover) */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleShareEvent(event.id)
+                        }}
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:text-gray-200"
+                        title="Partager l'événement"
+                        style={{ fontSize: '10px' }}
+                      >
+                        🔗
+                      </button>
                     </div>
                   ))}
                   
@@ -191,6 +234,18 @@ export default function CalendarView({ events, onEventClick, onDateClick }: Cale
           ))}
         </div>
       </div>
+
+      {/* Modales */}
+      <CalendarExportModal 
+        isOpen={exportModalOpen} 
+        onClose={() => setExportModalOpen(false)} 
+      />
+      
+      <EventShareModal 
+        isOpen={shareModalOpen} 
+        onClose={() => setShareModalOpen(false)} 
+        eventId={selectedEventId} 
+      />
     </div>
   )
 }

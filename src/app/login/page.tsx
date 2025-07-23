@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { createClientComponentClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
+import { useTheme } from '@/contexts/ThemeContext'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -14,6 +16,7 @@ export default function Login() {
   
   const router = useRouter()
   const supabase = createClientComponentClient()
+  const { isDark } = useTheme()
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -155,6 +158,24 @@ export default function Login() {
               )}
               {loading ? 'Chargement...' : isSignUp ? "S'inscrire" : 'Se connecter'}
             </button>
+
+            {/* Séparateur "ou" */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-blue-900/50 text-blue-200">ou</span>
+              </div>
+            </div>
+
+            {/* Google Sign In */}
+            <div className="transform transition-all duration-300 hover:scale-105">
+              <GoogleSignInButton 
+                text={isSignUp ? "S'inscrire avec Google" : "Continuer avec Google"}
+                variant="secondary"
+              />
+            </div>
 
             {/* Toggle */}
             <div className="text-center">

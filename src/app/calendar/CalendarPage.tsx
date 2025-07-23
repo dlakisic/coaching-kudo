@@ -7,6 +7,8 @@ import CalendarView from '@/components/calendar/CalendarView'
 import EventsList from '@/components/calendar/EventsList'
 import EventModal from '@/components/calendar/EventModal'
 import EventForm from '@/components/calendar/EventForm'
+import GoogleCalendarIntegration from '@/components/calendar/GoogleCalendarIntegration'
+import GoogleCalendarSync from '@/components/calendar/GoogleCalendarSync'
 import { useCalendar } from '@/hooks/useCalendar'
 import { type EventFormInput } from '@/schemas'
 import { type CoachLevel } from '@/constants'
@@ -176,6 +178,12 @@ export default function CalendarPage({ user, athletes }: CalendarPageProps) {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Google Calendar Integration */}
+      <div className="space-y-4">
+        <GoogleCalendarIntegration />
+        <GoogleCalendarSync onSyncComplete={refreshEvents} />
       </div>
 
       {/* Error Display */}

@@ -28,7 +28,17 @@ export class CalendarService {
   /**
    * Crée un nouvel événement
    */
-  static async createEvent(eventData: CreateEventInput) {
+  static async createEvent(eventData: CreateEventInput, userSupabaseClient?: any) {
+    // Utiliser le client utilisateur s'il est fourni, sinon le client service
+    const clientToUse = userSupabaseClient || supabase
+    
+    // Vérifier l'authentification
+    const { data: { user }, error: authError } = await clientToUse.auth.getUser()
+
+    if (!user) {
+      throw new Error('Utilisateur non authentifié')
+    }
+
     // Validation des données
     const validatedData = createEventSchema.parse(eventData)
 
@@ -38,7 +48,7 @@ export class CalendarService {
     }
 
     // Créer l'événement
-    const { data, error } = await supabase
+    const { data, error } = await clientToUse
       .from('calendar_events')
       .insert(validatedData)
       .select(`

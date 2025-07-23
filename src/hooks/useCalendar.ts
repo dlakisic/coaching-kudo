@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { CalendarService } from '@/services/CalendarService'
+import { createClientComponentClient } from '@/lib/supabase'
 import { type EventFormInput, type CreateEventInput } from '@/schemas'
 import { type CoachLevel } from '@/constants'
 
@@ -15,6 +16,7 @@ export function useCalendar({ userId, userRole, coachLevel }: UseCalendarProps) 
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const supabase = createClientComponentClient()
 
   // Fetch events
   const fetchEvents = async (filters?: {
@@ -62,11 +64,11 @@ export function useCalendar({ userId, userRole, coachLevel }: UseCalendarProps) 
         all_day: formData.allDay,
         location: formData.location,
         organizer_id: userId,
-        max_participants: formData.maxParticipants,
+        max_participants: formData.maxParticipants ? parseInt(formData.maxParticipants.toString()) : undefined,
         visibility: formData.visibility
       }
 
-      const newEvent = await CalendarService.createEvent(eventData)
+      const newEvent = await CalendarService.createEvent(eventData, supabase)
 
       // Add participants if provided
       if (formData.participants && formData.participants.length > 0) {
@@ -82,6 +84,22 @@ export function useCalendar({ userId, userRole, coachLevel }: UseCalendarProps) 
             )
           )
         )
+      }
+
+      // Auto-sync to Google Calendar if user has connected their account
+      try {
+        await fetch('/api/calendar/google/bidirectional-sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: newEvent.id,
+            action: 'sync_single'
+          })
+        })
+      } catch (syncError) {
+        console.warn('Google Calendar sync failed (non-critical):', syncError)
       }
 
       // Refresh events
@@ -113,11 +131,27 @@ export function useCalendar({ userId, userRole, coachLevel }: UseCalendarProps) 
           : new Date(`${formData.endDate}T${formData.endTime}`).toISOString(),
         all_day: formData.allDay,
         location: formData.location,
-        max_participants: formData.maxParticipants,
+        max_participants: formData.maxParticipants ? parseInt(formData.maxParticipants.toString()) : undefined,
         visibility: formData.visibility
       }
 
       const updatedEvent = await CalendarService.updateEvent(eventData, userId, coachLevel)
+
+      // Auto-sync to Google Calendar if user has connected their account
+      try {
+        await fetch('/api/calendar/google/bidirectional-sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: eventId,
+            action: 'sync_single'
+          })
+        })
+      } catch (syncError) {
+        console.warn('Google Calendar sync failed (non-critical):', syncError)
+      }
 
       // Refresh events
       await fetchEvents()
@@ -134,6 +168,22 @@ export function useCalendar({ userId, userRole, coachLevel }: UseCalendarProps) 
   const deleteEvent = async (eventId: string) => {
     try {
       setError(null)
+      
+      // Delete from Google Calendar first if synced
+      try {
+        await fetch('/api/calendar/google/bidirectional-sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: eventId,
+            action: 'delete_from_google'
+          })
+        })
+      } catch (syncError) {
+        console.warn('Google Calendar delete failed (non-critical):', syncError)
+      }
       
       await CalendarService.deleteEvent(eventId, userId, coachLevel)
       
